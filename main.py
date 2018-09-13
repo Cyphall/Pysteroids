@@ -66,7 +66,7 @@ class Ship(Sprite):
 
 
 class Bullet(Sprite):
-	def __init__(self, direction):
+	def __init__(self, direction, speed):
 		self.original = pygame.image.load("sprites/bullet.png").convert_alpha()
 		self.sprite = self.original
 		
@@ -74,10 +74,11 @@ class Bullet(Sprite):
 		self.rect = self.sprite.get_rect(center = screen.get_rect().center)
 		self.realPos = [self.rect.x, self.rect.y]
 		
+		self.speed = speed
 		self.rotation = 0
 		self.setRotation(direction-90)
 		rad = math.radians((-direction)-90)
-		self.movingIndex = (10*math.cos(rad), 10*math.sin(rad))
+		self.movingIndex = (self.speed*math.cos(rad), self.speed*math.sin(rad))
 		
 		self.realPos = [self.rect.x+self.movingIndex[0], self.rect.y+self.movingIndex[1]]
 		
@@ -103,6 +104,7 @@ pygame.display.set_caption("truc de l'espace")
 renderList = list()
 clock = pygame.time.Clock()
 running = True
+bulletTimeout = 0
 
 ship = Ship()
 
@@ -115,9 +117,13 @@ while (running):
 			mouse_pos = pygame.mouse.get_pos()
 			ship_pos = ship.getCenter()
 			ship.setRotation(math.degrees(math.atan2(ship_pos[0]-mouse_pos[0], ship_pos[1]-mouse_pos[1])))
-		if (event.type == pygame.MOUSEBUTTONDOWN):
-			if (event.button == 1):
-				Bullet(ship.getRotation())
+	if (pygame.mouse.get_pressed()[0] == True and bulletTimeout == 0):
+			Bullet(ship.getRotation(), 7)
+			bulletTimeout = 8
+	elif (bulletTimeout > 0):
+		bulletTimeout -= 1
+			
+		
 			
 	
 	# render
