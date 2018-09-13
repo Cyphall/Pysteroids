@@ -79,6 +79,22 @@ class Ship(Sprite):
 		
 		global renderList
 		renderList.append(self)
+	
+	
+	def move(self, direction):
+		if (direction == "up"):
+			self.floatCenter[1] -= 1
+		elif (direction == "down"):
+			self.floatCenter[1] += 1
+		elif (direction == "left"):
+			self.floatCenter[0] -= 1
+		else:
+			self.floatCenter[0] += 1
+		self.updateDirection()
+	
+	
+	def updateDirection(self):
+		self.setRotation(getAngleFromPositions(self.getPosition(), pygame.mouse.get_pos()))
 
 
 class Bullet(Sprite):
@@ -97,12 +113,23 @@ class Bullet(Sprite):
 		self.setRotation(direction-90)
 		self.rad = math.radians((-direction)-90)
 		self.movingIndex = (self.speed*math.cos(self.rad), self.speed*math.sin(self.rad))
-		self.floatCenter = [screen.get_rect().center[0]+self.movingIndex[0], screen.get_rect().center[1]+self.movingIndex[1]]
+		global ship
+		self.floatCenter = [ship.floatCenter[0]+self.movingIndex[0], ship.floatCenter[1]+self.movingIndex[1]]
+		self.lifetime = 0
 		
 		global renderList
 		global bulletsList
 		renderList.append(self)
 		bulletsList.append(self)
+	
+	
+	def tick(self):
+		self.floatCenter[0] += self.movingIndex[0]
+		self.floatCenter[1] += self.movingIndex[1]
+		self.setRotation(self.getRotation()+self.rotationSpeed)
+		self.lifetime += 1
+		if (self.lifetime > 150):
+			self.destroy()
 	
 	
 	def destroy(self):
@@ -113,9 +140,9 @@ class Bullet(Sprite):
 
 
 class Asteroid(Sprite):
-	def __init__(self, direction, speed, pos, rotationSpeed):
+	def __init__(self, direction, speed, pos, rotationSpeed, size):
 		# sprite
-		self.original = pygame.image.load("sprites/asteroid.png").convert_alpha()
+		self.original = pygame.image.load("sprites/asteroid"+str(size)+".png").convert_alpha()
 		self.sprite = self.original
 		
 		# rect
@@ -128,6 +155,8 @@ class Asteroid(Sprite):
 		self.rad = math.radians((-direction)-90)
 		self.movingIndex = (self.speed*math.cos(self.rad), self.speed*math.sin(self.rad))
 		self.floatCenter = list(pos)
+		self.lifetime = 0
+		self.size = size
 		
 		global renderList
 		global asteroidsList
@@ -135,9 +164,23 @@ class Asteroid(Sprite):
 		asteroidsList.append(self)
 	
 	
+	def tick(self):
+		self.floatCenter[0] += self.movingIndex[0]
+		self.floatCenter[1] += self.movingIndex[1]
+		self.setRotation(self.getRotation()+self.rotationSpeed)
+		self.lifetime += 1
+		if (self.lifetime > 500):
+			self.destroy()
+	
+	
 	def destroy(self):
 		global renderList
 		global asteroidsList
+		
+		if (self.size > 1):
+			Asteroid(self.rotation-90, self.speed, self.floatCenter, random.randint(-4, 4), self.size-1)
+			Asteroid(self.rotation+90, self.speed, self.floatCenter, random.randint(-4, 4), self.size-1)
+		
 		renderList.remove(self)
 		asteroidsList.remove(self)
 #--- /classes ---#
@@ -166,8 +209,11 @@ def createAsteroid():
 		pos[1] = random.randint(0, screen.get_rect().height)
 	
 	speed = random.randint(2, 4)
-	rotationSpeed = random.randint(-5, 5)
-	Asteroid(direction, speed, pos, rotationSpeed)
+	rotationSpeed = random.randint(-4, 4)
+	Asteroid(direction, speed, pos, rotationSpeed, 2)
+
+def getAngleFromPositions(point1, point2):
+	return math.degrees(math.atan2(point1[0]-point2[0], point1[1]-point2[1]))
 #--- /foctions ---#
 #--- main ---#
 FPS = 60
@@ -198,15 +244,23 @@ while (running):
 		if (event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE)):
 			running = False
 		if (event.type == pygame.MOUSEMOTION):
-			mouse_pos = pygame.mouse.get_pos()
-			ship_pos = ship.getPosition()
-			ship.setRotation(math.degrees(math.atan2(ship_pos[0]-mouse_pos[0], ship_pos[1]-mouse_pos[1])))
+			ship.updateDirection()
+	
+	if (pygame.key.get_pressed()[119] == True or pygame.key.get_pressed()[273] == True):
+		ship.move("up")
+	if (pygame.key.get_pressed()[115] == True or pygame.key.get_pressed()[274] == True):
+		ship.move("down")
+	if (pygame.key.get_pressed()[97] == True or pygame.key.get_pressed()[276] == True):
+		ship.move("left")
+	if (pygame.key.get_pressed()[100] == True or pygame.key.get_pressed()[275] == True):
+		ship.move("right")
 	
 	if (pygame.mouse.get_pressed()[0] == True and bulletTimeout == 0):
-			Bullet(ship.getRotation(), 7)
+			Bullet(ship.getRotation(), 10)
 			bulletTimeout = 12
 	elif (bulletTimeout > 0):
 		bulletTimeout -= 1
+	
 	
 	if (asteroidTimeout == 0):
 		createAsteroid()
@@ -220,8 +274,7 @@ while (running):
 		if (val >= 0):
 			bullet.destroy()
 			asteroidsList[val].destroy()
-			
-			
+	
 	
 	# tick and render
 	screen.fill((pygame.Color("black")))
@@ -231,5 +284,5 @@ while (running):
 	pygame.display.flip()
 	
 	# loop timer
-	clock.tick_busy_loop(FPS)
+	clock.tick(FPS)
 #--- /main ---#
