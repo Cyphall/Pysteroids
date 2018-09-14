@@ -2,6 +2,7 @@ import pygame
 import os
 import math
 import random
+import ctypes
 
 #--- classes ---#
 class Sprite():
@@ -282,10 +283,11 @@ def getAngleFromPositions(point1, point2):
 #--- main ---#
 FPS = 60
 
+ctypes.windll.user32.SetProcessDPIAware()
 os.environ['SDL_VIDEO_CENTERED'] = '1'
 
 pygame.init()
-screen = pygame.display.set_mode((800, 600))
+screen = pygame.display.set_mode((1024, 768))
 pygame.display.set_caption("truc de l'espace")
 
 random.seed()
