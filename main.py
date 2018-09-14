@@ -16,10 +16,10 @@ class Sprite():
 		# variables
 		self.speed = speed
 		self.rotationSpeed = rotationSpeed
-		self.setRotation(direction-90)
 		self.rad = math.radians((-direction)-90)
 		self.movingIndex = (self.speed*math.cos(self.rad), self.speed*math.sin(self.rad))
 		self.floatCenter = list(pos)
+		self.setRotation(direction-90)
 		
 		global renderList
 		renderList.append(self)
@@ -29,6 +29,7 @@ class Sprite():
 		self.floatCenter[0] += self.movingIndex[0]
 		self.floatCenter[1] += self.movingIndex[1]
 		self.setRotation(self.getRotation()+self.rotationSpeed)
+		self.rect.center = self.floatCenter
 	
 	
 	def setPosition(self, pos):
@@ -39,6 +40,7 @@ class Sprite():
 		self.rotation = angle
 		self.sprite = pygame.transform.rotate(self.original, self.rotation)
 		self.rect = self.sprite.get_rect()
+		self.rect.center = self.floatCenter
 	
 	
 	def getPosition(self):
@@ -50,7 +52,6 @@ class Sprite():
 	
 	
 	def render(self, display):
-		self.rect.center = self.floatCenter
 		display.blit(self.sprite, self.rect)
 	
 	
@@ -72,10 +73,10 @@ class Ship(Sprite):
 		# variables
 		self.speed = 0
 		self.rotationSpeed = 0
-		self.setRotation(0)
 		self.rad = math.radians((0)-90)
 		self.movingIndex = (self.speed*math.cos(self.rad), self.speed*math.sin(self.rad))
 		self.floatCenter = list(screen.get_rect().center)
+		self.setRotation(0)
 		
 		global renderList
 		renderList.append(self)
@@ -95,6 +96,14 @@ class Ship(Sprite):
 	
 	def updateDirection(self):
 		self.setRotation(getAngleFromPositions(self.getPosition(), pygame.mouse.get_pos()))
+	
+	
+	def destroy(self):
+		createExplosion(20, self.floatCenter, 80)
+		global renderList
+		global ship
+		renderList.remove(self)
+		ship = None
 
 
 class Bullet(Sprite):
@@ -110,12 +119,12 @@ class Bullet(Sprite):
 		# variables
 		self.speed = speed
 		self.rotationSpeed = 0
-		self.setRotation(direction-90)
 		self.rad = math.radians((-direction)-90)
 		self.movingIndex = (self.speed*math.cos(self.rad), self.speed*math.sin(self.rad))
 		global ship
 		self.floatCenter = [ship.floatCenter[0]+self.movingIndex[0], ship.floatCenter[1]+self.movingIndex[1]]
 		self.lifetime = 0
+		self.setRotation(direction-90)
 		
 		global renderList
 		global bulletsList
@@ -127,6 +136,7 @@ class Bullet(Sprite):
 		self.floatCenter[0] += self.movingIndex[0]
 		self.floatCenter[1] += self.movingIndex[1]
 		self.setRotation(self.getRotation()+self.rotationSpeed)
+		self.rect.center = self.floatCenter
 		self.lifetime += 1
 		if (self.lifetime > 150):
 			self.destroy()
@@ -151,12 +161,12 @@ class Asteroid(Sprite):
 		# variables
 		self.speed = speed
 		self.rotationSpeed = rotationSpeed
-		self.setRotation(direction-90)
 		self.rad = math.radians((-direction)-90)
 		self.movingIndex = (self.speed*math.cos(self.rad), self.speed*math.sin(self.rad))
 		self.floatCenter = list(pos)
 		self.lifetime = 0
 		self.size = size
+		self.setRotation(direction-90)
 		
 		global renderList
 		global asteroidsList
@@ -168,21 +178,64 @@ class Asteroid(Sprite):
 		self.floatCenter[0] += self.movingIndex[0]
 		self.floatCenter[1] += self.movingIndex[1]
 		self.setRotation(self.getRotation()+self.rotationSpeed)
+		self.rect.center = self.floatCenter
 		self.lifetime += 1
 		if (self.lifetime > 500):
-			self.destroy()
+			self.destroy(False)
+			
 	
 	
-	def destroy(self):
+	def destroy(self, division):
 		global renderList
 		global asteroidsList
 		
-		if (self.size > 1):
-			Asteroid(self.rotation-90, self.speed, self.floatCenter, random.randint(-4, 4), self.size-1)
-			Asteroid(self.rotation+90, self.speed, self.floatCenter, random.randint(-4, 4), self.size-1)
+		if (division == True):
+			if (self.size > 1):
+				Asteroid(self.rotation-90, self.speed, self.floatCenter, random.randint(-4, 4), self.size-1)
+				Asteroid(self.rotation+90, self.speed, self.floatCenter, random.randint(-4, 4), self.size-1)
+			createExplosion(12, self.floatCenter, 40)
 		
 		renderList.remove(self)
 		asteroidsList.remove(self)
+
+
+class Particle(Sprite):
+	def __init__(self, direction, speed, pos, rotationSpeed, lifetime):
+		# sprite
+		self.original = pygame.image.load("sprites/particle.png").convert_alpha()
+		self.sprite = self.original
+		
+		# rect
+		self.rect = self.sprite.get_rect()
+		
+		# variables
+		self.speed = speed
+		self.rotationSpeed = rotationSpeed
+		self.rad = math.radians((-direction)-90)
+		self.movingIndex = (self.speed*math.cos(self.rad), self.speed*math.sin(self.rad))
+		self.floatCenter = list(pos)
+		self.life = 0
+		self.lifetime = lifetime
+		self.setRotation(direction-90)
+		
+		global renderList
+		renderList.append(self)
+	
+	
+	def tick(self):
+		self.floatCenter[0] += self.movingIndex[0]
+		self.floatCenter[1] += self.movingIndex[1]
+		self.setRotation(self.getRotation()+self.rotationSpeed)
+		self.rect.center = self.floatCenter
+		self.life += 1
+		if (self.life > self.lifetime):
+			self.destroy(False)
+			
+	
+	
+	def destroy(self, division):
+		global renderList
+		renderList.remove(self)
 #--- /classes ---#
 #--- foctions ---#
 def createAsteroid():
@@ -209,8 +262,19 @@ def createAsteroid():
 		pos[1] = random.randint(0, screen.get_rect().height)
 	
 	speed = random.randint(2, 4)
-	rotationSpeed = random.randint(-4, 4)
-	Asteroid(direction, speed, pos, rotationSpeed, 2)
+	rotationSpeed = random.randint(-3, 3)
+	sizeChooser = random.randint(1, 100)
+	if (sizeChooser > 75):
+		size = 3
+	elif (sizeChooser > 65):
+		size = 1
+	else:
+		size = 2
+	Asteroid(direction, speed, pos, rotationSpeed, size)
+
+def createExplosion(particleAmount, pos, lifetime):
+	for i in range(particleAmount):
+		Particle(random.randint(-180, 180), random.randint(1, 2), pos, 0, lifetime)
 
 def getAngleFromPositions(point1, point2):
 	return math.degrees(math.atan2(point1[0]-point2[0], point1[1]-point2[1]))
@@ -235,6 +299,8 @@ clock = pygame.time.Clock()
 running = True
 bulletTimeout = 0
 asteroidTimeout = 0
+count = 0
+shipRespawnTimeout = 0
 
 ship = Ship()
 
@@ -244,36 +310,49 @@ while (running):
 		if (event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE)):
 			running = False
 		if (event.type == pygame.MOUSEMOTION):
-			ship.updateDirection()
-	
-	if (pygame.key.get_pressed()[119] == True or pygame.key.get_pressed()[273] == True):
-		ship.move("up")
-	if (pygame.key.get_pressed()[115] == True or pygame.key.get_pressed()[274] == True):
-		ship.move("down")
-	if (pygame.key.get_pressed()[97] == True or pygame.key.get_pressed()[276] == True):
-		ship.move("left")
-	if (pygame.key.get_pressed()[100] == True or pygame.key.get_pressed()[275] == True):
-		ship.move("right")
-	
-	if (pygame.mouse.get_pressed()[0] == True and bulletTimeout == 0):
-			Bullet(ship.getRotation(), 10)
-			bulletTimeout = 12
-	elif (bulletTimeout > 0):
-		bulletTimeout -= 1
+			if (ship is not None):
+				ship.updateDirection()
+	if (ship is not None):
+		if (pygame.key.get_pressed()[119] == True or pygame.key.get_pressed()[273] == True):
+			ship.move("up")
+		if (pygame.key.get_pressed()[115] == True or pygame.key.get_pressed()[274] == True):
+			ship.move("down")
+		if (pygame.key.get_pressed()[97] == True or pygame.key.get_pressed()[276] == True):
+			ship.move("left")
+		if (pygame.key.get_pressed()[100] == True or pygame.key.get_pressed()[275] == True):
+			ship.move("right")
+		
+		if (pygame.mouse.get_pressed()[0] == True and bulletTimeout == 0):
+				Bullet(ship.getRotation(), 10)
+				bulletTimeout = 12
+		elif (bulletTimeout > 0):
+			bulletTimeout -= 1
 	
 	
 	if (asteroidTimeout == 0):
 		createAsteroid()
-		asteroidTimeout = 20
+		asteroidTimeout = 10
 	else:
 		asteroidTimeout -= 1
 	
 	# collision detection
 	for bullet in bulletsList:
-		val = bullet.rect.collidelist(asteroidsList)
-		if (val >= 0):
+		laserHitIndex = bullet.rect.collidelist(asteroidsList)
+		if (laserHitIndex >= 0):
 			bullet.destroy()
-			asteroidsList[val].destroy()
+			asteroidsList[laserHitIndex].destroy(True)
+	
+	if (ship is not None):
+		shipHitIndex = ship.rect.collidelist(asteroidsList)
+		if (shipHitIndex >= 0):
+			ship.destroy()
+			asteroidsList[shipHitIndex].destroy(True)
+			shipRespawnTimeout = 100
+	else:
+		shipRespawnTimeout -= 1
+		if (shipRespawnTimeout == 0):
+			ship = Ship()
+			ship.updateDirection()
 	
 	
 	# tick and render
