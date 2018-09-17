@@ -1,0 +1,33 @@
+{
+	"minigun":
+	{
+		"name": "Minigun",
+		"bulletSprite": "bullet1",
+		"fireRate": 12,
+		"speed": 10,
+		"multiShoot": null,
+		"removeOnImpact": true
+	},
+	"energyBall":
+	{
+		"name": "Boule d'énergie",
+		"bulletSprite": "bullet2",
+		"fireRate": 60,
+		"speed": 5,
+		"multiShoot": null,
+		"removeOnImpact": false
+	},
+	"shotgun":
+	{
+		"name": "Fusil à pompe",
+		"bulletSprite": "bullet1",
+		"fireRate": 30,
+		"speed": 10,
+		"multiShoot":
+		{
+			"bulletsPerShoot": 5,
+			"bulletsAngle": [-10, -5, 0, 5, 10]
+		},
+		"removeOnImpact": true
+	}
+}

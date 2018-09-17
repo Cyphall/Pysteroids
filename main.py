@@ -3,6 +3,7 @@ import os
 import math
 import random
 import ctypes
+import json
 
 #--- classes ---#
 class Sprite():
@@ -77,6 +78,7 @@ class Ship(Sprite):
 		self.rad = math.radians((0)-90)
 		self.movingIndex = (self.speed*math.cos(self.rad), self.speed*math.sin(self.rad))
 		self.floatCenter = list(screen.get_rect().center)
+		self.weapon = Weapon("minigun")
 		self.setRotation(0)
 		
 		global renderList
@@ -95,6 +97,34 @@ class Ship(Sprite):
 		self.updateDirection()
 	
 	
+	def tick(self):
+		self.floatCenter[0] += self.movingIndex[0]
+		self.floatCenter[1] += self.movingIndex[1]
+		self.setRotation(self.getRotation()+self.rotationSpeed)
+		self.rect.center = self.floatCenter
+		
+		if (pygame.key.get_pressed()[119] == True or pygame.key.get_pressed()[273] == True):
+			self.move("up")
+		if (pygame.key.get_pressed()[115] == True or pygame.key.get_pressed()[274] == True):
+			self.move("down")
+		if (pygame.key.get_pressed()[97] == True or pygame.key.get_pressed()[276] == True):
+			self.move("left")
+		if (pygame.key.get_pressed()[100] == True or pygame.key.get_pressed()[275] == True):
+			self.move("right")
+		
+		if (pygame.mouse.get_pressed()[0] == True):
+			self.weapon.tick(True, self.getRotation())
+		else:
+			self.weapon.tick(False, None)
+		
+		if (pygame.key.get_pressed()[49]):
+			self.weapon = Weapon("minigun")
+		if (pygame.key.get_pressed()[50]):
+			self.weapon = Weapon("energyBall")
+		if (pygame.key.get_pressed()[51]):
+			self.weapon = Weapon("shotgun")
+	
+	
 	def updateDirection(self):
 		self.setRotation(getAngleFromPositions(self.getPosition(), pygame.mouse.get_pos()))
 	
@@ -108,9 +138,9 @@ class Ship(Sprite):
 
 
 class Bullet(Sprite):
-	def __init__(self, direction, speed):
+	def __init__(self, direction, speed, bulletSprite, removeOnImpact):
 		# sprite
-		self.original = pygame.image.load("sprites/bullet.png").convert_alpha()
+		self.original = pygame.image.load("sprites/"+str(bulletSprite)+".png").convert_alpha()
 		self.sprite = self.original
 		
 		# rect
@@ -125,6 +155,7 @@ class Bullet(Sprite):
 		global ship
 		self.floatCenter = [ship.floatCenter[0]+self.movingIndex[0], ship.floatCenter[1]+self.movingIndex[1]]
 		self.lifetime = 0
+		self.removeOnImpact = removeOnImpact
 		self.setRotation(direction-90)
 		
 		global renderList
@@ -140,6 +171,11 @@ class Bullet(Sprite):
 		self.rect.center = self.floatCenter
 		self.lifetime += 1
 		if (self.lifetime > 150):
+			self.destroy()
+	
+	
+	def hit(self):
+		if (self.removeOnImpact == True):
 			self.destroy()
 	
 	
@@ -233,10 +269,33 @@ class Particle(Sprite):
 			self.destroy(False)
 			
 	
-	
 	def destroy(self, division):
 		global renderList
 		renderList.remove(self)
+
+
+class Weapon():
+	def __init__(self, weaponType):
+		with open("weapons.json", "r") as stats:
+			self.stats = json.load(stats)[weaponType]
+		self.timeout = 0
+	
+	
+	def tick(self, firing, direction):
+		if (firing == False):
+			if (self.timeout > 0):
+				self.timeout -= 1
+		else:
+			if (self.timeout == 0):
+				if (self.stats["multiShoot"] is not None):
+					for i in range(self.stats["multiShoot"]["bulletsPerShoot"]):
+						Bullet(direction+(self.stats["multiShoot"]["bulletsAngle"][i]), self.stats["speed"], self.stats["bulletSprite"], self.stats["removeOnImpact"])
+				else:
+					Bullet(direction, self.stats["speed"], self.stats["bulletSprite"], self.stats["removeOnImpact"])
+				self.timeout = self.stats["fireRate"]
+			else:
+				self.timeout -= 1
+		
 #--- /classes ---#
 #--- foctions ---#
 def createAsteroid():
@@ -314,22 +373,6 @@ while (running):
 		if (event.type == pygame.MOUSEMOTION):
 			if (ship is not None):
 				ship.updateDirection()
-	if (ship is not None):
-		if (pygame.key.get_pressed()[119] == True or pygame.key.get_pressed()[273] == True):
-			ship.move("up")
-		if (pygame.key.get_pressed()[115] == True or pygame.key.get_pressed()[274] == True):
-			ship.move("down")
-		if (pygame.key.get_pressed()[97] == True or pygame.key.get_pressed()[276] == True):
-			ship.move("left")
-		if (pygame.key.get_pressed()[100] == True or pygame.key.get_pressed()[275] == True):
-			ship.move("right")
-		
-		if (pygame.mouse.get_pressed()[0] == True and bulletTimeout == 0):
-				Bullet(ship.getRotation(), 10)
-				bulletTimeout = 12
-		elif (bulletTimeout > 0):
-			bulletTimeout -= 1
-	
 	
 	if (asteroidTimeout == 0):
 		createAsteroid()
@@ -341,7 +384,7 @@ while (running):
 	for bullet in bulletsList:
 		laserHitIndex = bullet.rect.collidelist(asteroidsList)
 		if (laserHitIndex >= 0):
-			bullet.destroy()
+			bullet.hit()
 			asteroidsList[laserHitIndex].destroy(True)
 	
 	if (ship is not None):
