@@ -122,6 +122,8 @@ class Ship(Sprite):
 		if (pygame.key.get_pressed()[50]):
 			self.weapon = Weapon("energyBall")
 		if (pygame.key.get_pressed()[51]):
+			self.weapon = Weapon("sniper")
+		if (pygame.key.get_pressed()[52]):
 			self.weapon = Weapon("shotgun")
 	
 	

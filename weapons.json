@@ -17,6 +17,15 @@
 		"multiShoot": null,
 		"removeOnImpact": false
 	},
+	"sniper":
+	{
+		"name": "Sniper",
+		"bulletSprite": "bullet3",
+		"fireRate": 40,
+		"speed": 50,
+		"multiShoot": null,
+		"removeOnImpact": true
+	},
 	"shotgun":
 	{
 		"name": "Fusil à pompe",
