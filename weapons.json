@@ -31,7 +31,7 @@
 		"name": "Fusil à pompe",
 		"bulletSprite": "bullet1",
 		"fireRate": 30,
-		"speed": 10,
+		"speed": 8,
 		"multiShoot":
 		{
 			"bulletsPerShoot": 5,

@@ -79,6 +79,9 @@ class Ship(Sprite):
 		self.movingIndex = (self.speed*math.cos(self.rad), self.speed*math.sin(self.rad))
 		self.floatCenter = list(screen.get_rect().center)
 		self.weapon = Weapon("minigun")
+		self.invulnerability = True
+		self.isRendered = True
+		self.invulnerabilityTimeout = 90
 		self.setRotation(0)
 		
 		global renderList
@@ -125,10 +128,33 @@ class Ship(Sprite):
 			self.weapon = Weapon("sniper")
 		if (pygame.key.get_pressed()[52]):
 			self.weapon = Weapon("shotgun")
+		
+		if (self.invulnerabilityTimeout > 0):
+			self.invulnerabilityTimeout -= 1
+			if (self.invulnerabilityTimeout == 0):
+				self.isRendered = True
+				self.invulnerability = False
+			else:
+				if (self.invulnerabilityTimeout % 10 >= 5):
+					self.isRendered = True
+				else:
+					self.isRendered = False
 	
 	
 	def updateDirection(self):
 		self.setRotation(getAngleFromPositions(self.getPosition(), pygame.mouse.get_pos()))
+	
+	
+	def hit(self):
+		if (self.invulnerability == True):
+			return False
+		self.destroy()
+		return True
+	
+	
+	def render(self, display):
+		if (self.isRendered == True):
+			display.blit(self.sprite, self.rect)
 	
 	
 	def destroy(self):
@@ -392,9 +418,9 @@ while (running):
 	if (ship is not None):
 		shipHitIndex = ship.rect.collidelist(asteroidsList)
 		if (shipHitIndex >= 0):
-			ship.destroy()
-			asteroidsList[shipHitIndex].destroy(True)
-			shipRespawnTimeout = 100
+			if (ship.hit()):
+				asteroidsList[shipHitIndex].destroy(True)
+				shipRespawnTimeout = 100
 	else:
 		shipRespawnTimeout -= 1
 		if (shipRespawnTimeout == 0):
