@@ -4,6 +4,7 @@ import math
 import random
 import ctypes
 import json
+import time
 
 #--- classes ---#
 class Sprite():
@@ -90,13 +91,13 @@ class Ship(Sprite):
 	
 	def move(self, direction):
 		if (direction == "up"):
-			self.floatCenter[1] -= 1
+			self.floatCenter[1] -= 1.5
 		elif (direction == "down"):
-			self.floatCenter[1] += 1
+			self.floatCenter[1] += 1.5
 		elif (direction == "left"):
-			self.floatCenter[0] -= 1
+			self.floatCenter[0] -= 1.5
 		else:
-			self.floatCenter[0] += 1
+			self.floatCenter[0] += 1.5
 		self.updateDirection()
 	
 	
@@ -119,6 +120,7 @@ class Ship(Sprite):
 			self.weapon.tick(True, self.getRotation())
 		else:
 			self.weapon.tick(False, None)
+		
 		
 		if (pygame.key.get_pressed()[49]):
 			self.weapon = Weapon("minigun")
@@ -306,7 +308,8 @@ class Weapon():
 	def __init__(self, weaponType):
 		with open("weapons.json", "r") as stats:
 			self.stats = json.load(stats)[weaponType]
-		self.timeout = 0
+		self.timeout = self.stats["fireRate"]
+		changeWeapon(weaponType)
 	
 	
 	def tick(self, firing, direction):
@@ -323,7 +326,37 @@ class Weapon():
 				self.timeout = self.stats["fireRate"]
 			else:
 				self.timeout -= 1
+
+
+class GUIWeapon():
+	def __init__(self, name, pos):
+		self.name = name
+		self.unselectedSprite = pygame.image.load("sprites/GUI sprites/"+self.name+".png").convert_alpha()
+		self.selectedSprite = pygame.image.load("sprites/GUI sprites/"+self.name+"Selected.png").convert_alpha()
+		self.selected = False
+		self.rect = self.selectedSprite.get_rect(left = pos, top = 5)
 		
+		global GUIWeaponsList
+		GUIWeaponsList.append(self)
+	
+	
+	def select(self):
+		self.selected = True
+	
+	
+	def unselect(self):
+		self.selected = False
+	
+	
+	def getID(self):
+		return self.name
+	
+	
+	def render(self, display):
+		if (self.selected):
+			display.blit(self.selectedSprite, self.rect)
+		else:
+			display.blit(self.unselectedSprite, self.rect)
 #--- /classes ---#
 #--- foctions ---#
 def createAsteroid():
@@ -360,12 +393,22 @@ def createAsteroid():
 		size = 2
 	Asteroid(direction, speed, pos, rotationSpeed, size)
 
+
 def createExplosion(particleAmount, pos, lifetime):
 	for i in range(particleAmount):
 		Particle(random.randint(-180, 180), random.randint(1, 2), pos, 0, lifetime)
 
+
 def getAngleFromPositions(point1, point2):
 	return math.degrees(math.atan2(point1[0]-point2[0], point1[1]-point2[1]))
+
+
+def changeWeapon(weaponID):
+	for GUIWeapon in GUIWeaponsList:
+		if (GUIWeapon.getID() == weaponID):
+			GUIWeapon.select()
+		else:
+			GUIWeapon.unselect()
 #--- /foctions ---#
 #--- main ---#
 FPS = 60
@@ -383,6 +426,7 @@ random.seed()
 renderList = list()
 asteroidsList = list()
 bulletsList = list()
+GUIWeaponsList = list()
 
 clock = pygame.time.Clock()
 running = True
@@ -390,6 +434,16 @@ bulletTimeout = 0
 asteroidTimeout = 0
 count = 0
 shipRespawnTimeout = 0
+
+last = 0
+current = 0
+
+with open("weapons.json", "r") as stats:
+	GUIWeaponID = json.load(stats)
+GUIWeaponPos = 5
+for k, _ in GUIWeaponID.items():
+	GUIWeapon(k, GUIWeaponPos)
+	GUIWeaponPos += 44
 
 ship = Ship()
 
@@ -433,8 +487,10 @@ while (running):
 	for sprite in renderList:
 		sprite.tick()
 		sprite.render(screen)
+	for GUIWeapon in GUIWeaponsList:
+		GUIWeapon.render(screen)
 	pygame.display.flip()
 	
 	# loop timer
-	clock.tick(FPS)
+	clock.tick_busy_loop(FPS)
 #--- /main ---#
