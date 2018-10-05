@@ -493,4 +493,5 @@ while (running):
 	
 	# loop timer
 	clock.tick_busy_loop(FPS)
+pygame.quit()
 #--- /main ---#
