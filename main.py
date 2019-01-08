@@ -5,12 +5,25 @@ import random
 import ctypes
 import json
 import time
+import sys
+
+
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
+
 
 #--- classes ---#
 class Sprite():
 	def __init__(self, path, direction, speed, pos, rotationSpeed):
 		# sprite
-		self.original = pygame.image.load("sprites/"+str(path)).convert_alpha()
+		self.original = pygame.image.load(resource_path("sprites\\"+str(path))).convert_alpha()
 		self.sprite = self.original
 		
 		# rect
@@ -66,7 +79,7 @@ class Sprite():
 class Ship(Sprite):
 	def __init__(self):
 		# sprite
-		self.original = pygame.image.load("sprites/ship.png").convert_alpha()
+		self.original = pygame.image.load(resource_path("sprites\\ship.png")).convert_alpha()
 		self.sprite = self.original
 		
 		# rect
@@ -170,7 +183,7 @@ class Ship(Sprite):
 class Bullet(Sprite):
 	def __init__(self, direction, speed, bulletSprite, removeOnImpact):
 		# sprite
-		self.original = pygame.image.load("sprites/"+str(bulletSprite)+".png").convert_alpha()
+		self.original = pygame.image.load(resource_path("sprites\\"+str(bulletSprite)+".png")).convert_alpha()
 		self.sprite = self.original
 		
 		# rect
@@ -219,7 +232,7 @@ class Bullet(Sprite):
 class Asteroid(Sprite):
 	def __init__(self, direction, speed, pos, rotationSpeed, size):
 		# sprite
-		self.original = pygame.image.load("sprites/asteroid"+str(size)+".png").convert_alpha()
+		self.original = pygame.image.load(resource_path("sprites\\asteroid"+str(size)+".png")).convert_alpha()
 		self.sprite = self.original
 		
 		# rect
@@ -269,7 +282,7 @@ class Asteroid(Sprite):
 class Particle(Sprite):
 	def __init__(self, direction, speed, pos, rotationSpeed, lifetime):
 		# sprite
-		self.original = pygame.image.load("sprites/particle.png").convert_alpha()
+		self.original = pygame.image.load(resource_path("sprites\\particle.png")).convert_alpha()
 		self.sprite = self.original
 		
 		# rect
@@ -306,7 +319,7 @@ class Particle(Sprite):
 
 class Weapon():
 	def __init__(self, weaponType):
-		with open("weapons.json", "r") as stats:
+		with open(resource_path("weapons.json"), "r") as stats:
 			self.stats = json.load(stats)[weaponType]
 		self.timeout = self.stats["fireRate"]
 		changeWeapon(weaponType)
@@ -331,8 +344,8 @@ class Weapon():
 class GUIWeapon():
 	def __init__(self, name, pos):
 		self.name = name
-		self.unselectedSprite = pygame.image.load("sprites/GUI sprites/"+self.name+".png").convert_alpha()
-		self.selectedSprite = pygame.image.load("sprites/GUI sprites/"+self.name+"Selected.png").convert_alpha()
+		self.unselectedSprite = pygame.image.load(resource_path("sprites\\GUI sprites\\"+self.name+".png")).convert_alpha()
+		self.selectedSprite = pygame.image.load(resource_path("sprites\\GUI sprites\\"+self.name+"Selected.png")).convert_alpha()
 		self.selected = False
 		self.rect = self.selectedSprite.get_rect(left = pos, top = 5)
 		
@@ -438,7 +451,7 @@ shipRespawnTimeout = 0
 last = 0
 current = 0
 
-with open("weapons.json", "r") as stats:
+with open(resource_path("weapons.json"), "r") as stats:
 	GUIWeaponID = json.load(stats)
 GUIWeaponPos = 5
 for k, _ in GUIWeaponID.items():
