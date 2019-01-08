@@ -487,8 +487,9 @@ while (running):
 	for sprite in renderList:
 		sprite.tick()
 		sprite.render(screen)
-	for GUIWeapon in GUIWeaponsList:
-		GUIWeapon.render(screen)
+	[GUIWeapon.render(screen) for GUIWeapon in GUIWeaponsList]
+	
+	# screen refresh
 	pygame.display.flip()
 	
 	# loop timer
