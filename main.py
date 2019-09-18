@@ -1,29 +1,17 @@
-import pygame
-import os
-import math
-import random
 import ctypes
 import json
-import time
-import sys
+import math
+import os
+import random
+
+import pygame
 
 
-def resource_path(relative_path):
-    """ Get absolute path to resource, works for dev and for PyInstaller """
-    try:
-        # PyInstaller creates a temp folder and stores path in _MEIPASS
-        base_path = sys._MEIPASS
-    except Exception:
-        base_path = os.path.abspath(".")
-
-    return os.path.join(base_path, relative_path)
-
-
-#--- classes ---#
+# --- classes ---#
 class Sprite():
 	def __init__(self, path, direction, speed, pos, rotationSpeed):
 		# sprite
-		self.original = pygame.image.load(resource_path("sprites\\"+str(path))).convert_alpha()
+		self.original = pygame.image.load("sprites\\" + str(path)).convert_alpha()
 		self.sprite = self.original
 		
 		# rect
@@ -32,25 +20,22 @@ class Sprite():
 		# variables
 		self.speed = speed
 		self.rotationSpeed = rotationSpeed
-		self.rad = math.radians((-direction)-90)
-		self.movingIndex = (self.speed*math.cos(self.rad), self.speed*math.sin(self.rad))
+		self.rad = math.radians((-direction) - 90)
+		self.movingIndex = (self.speed * math.cos(self.rad), self.speed * math.sin(self.rad))
 		self.floatCenter = list(pos)
-		self.setRotation(direction-90)
+		self.setRotation(direction - 90)
 		
 		global renderList
 		renderList.append(self)
 	
-	
 	def tick(self):
 		self.floatCenter[0] += self.movingIndex[0]
 		self.floatCenter[1] += self.movingIndex[1]
-		self.setRotation(self.getRotation()+self.rotationSpeed)
+		self.setRotation(self.getRotation() + self.rotationSpeed)
 		self.rect.center = self.floatCenter
-	
 	
 	def setPosition(self, pos):
 		self.floatCenter = pos
-	
 	
 	def setRotation(self, angle):
 		self.rotation = angle
@@ -58,18 +43,14 @@ class Sprite():
 		self.rect = self.sprite.get_rect()
 		self.rect.center = self.floatCenter
 	
-	
 	def getPosition(self):
 		return self.floatCenter
-	
 	
 	def getRotation(self):
 		return self.rotation
 	
-	
 	def render(self, display):
 		display.blit(self.sprite, self.rect)
-	
 	
 	def destroy(self):
 		global renderList
@@ -79,7 +60,7 @@ class Sprite():
 class Ship(Sprite):
 	def __init__(self):
 		# sprite
-		self.original = pygame.image.load(resource_path("sprites\\ship.png")).convert_alpha()
+		self.original = pygame.image.load("sprites\\ship.png").convert_alpha()
 		self.sprite = self.original
 		
 		# rect
@@ -89,8 +70,8 @@ class Ship(Sprite):
 		# variables
 		self.speed = 0
 		self.rotationSpeed = 0
-		self.rad = math.radians((0)-90)
-		self.movingIndex = (self.speed*math.cos(self.rad), self.speed*math.sin(self.rad))
+		self.rad = math.radians((0) - 90)
+		self.movingIndex = (self.speed * math.cos(self.rad), self.speed * math.sin(self.rad))
 		self.floatCenter = list(screen.get_rect().center)
 		self.weapon = Weapon("minigun")
 		self.invulnerability = True
@@ -100,7 +81,6 @@ class Ship(Sprite):
 		
 		global renderList
 		renderList.append(self)
-	
 	
 	def move(self, direction):
 		if (direction == "up"):
@@ -113,11 +93,10 @@ class Ship(Sprite):
 			self.floatCenter[0] += 1.5
 		self.updateDirection()
 	
-	
 	def tick(self):
 		self.floatCenter[0] += self.movingIndex[0]
 		self.floatCenter[1] += self.movingIndex[1]
-		self.setRotation(self.getRotation()+self.rotationSpeed)
+		self.setRotation(self.getRotation() + self.rotationSpeed)
 		self.rect.center = self.floatCenter
 		
 		if (pygame.key.get_pressed()[119] == True or pygame.key.get_pressed()[273] == True):
@@ -133,7 +112,6 @@ class Ship(Sprite):
 			self.weapon.tick(True, self.getRotation())
 		else:
 			self.weapon.tick(False, None)
-		
 		
 		if (pygame.key.get_pressed()[49]):
 			self.weapon = Weapon("minigun")
@@ -155,10 +133,8 @@ class Ship(Sprite):
 				else:
 					self.isRendered = False
 	
-	
 	def updateDirection(self):
 		self.setRotation(getAngleFromPositions(self.getPosition(), pygame.mouse.get_pos()))
-	
 	
 	def hit(self):
 		if (self.invulnerability == True):
@@ -166,11 +142,9 @@ class Ship(Sprite):
 		self.destroy()
 		return True
 	
-	
 	def render(self, display):
 		if (self.isRendered == True):
 			display.blit(self.sprite, self.rect)
-	
 	
 	def destroy(self):
 		createExplosion(20, self.floatCenter, 80)
@@ -183,7 +157,7 @@ class Ship(Sprite):
 class Bullet(Sprite):
 	def __init__(self, direction, speed, bulletSprite, removeOnImpact):
 		# sprite
-		self.original = pygame.image.load(resource_path("sprites\\"+str(bulletSprite)+".png")).convert_alpha()
+		self.original = pygame.image.load("sprites\\" + str(bulletSprite) + ".png").convert_alpha()
 		self.sprite = self.original
 		
 		# rect
@@ -193,34 +167,31 @@ class Bullet(Sprite):
 		# variables
 		self.speed = speed
 		self.rotationSpeed = 0
-		self.rad = math.radians((-direction)-90)
-		self.movingIndex = (self.speed*math.cos(self.rad), self.speed*math.sin(self.rad))
+		self.rad = math.radians((-direction) - 90)
+		self.movingIndex = (self.speed * math.cos(self.rad), self.speed * math.sin(self.rad))
 		global ship
-		self.floatCenter = [ship.floatCenter[0]+self.movingIndex[0], ship.floatCenter[1]+self.movingIndex[1]]
+		self.floatCenter = [ship.floatCenter[0] + self.movingIndex[0], ship.floatCenter[1] + self.movingIndex[1]]
 		self.lifetime = 0
 		self.removeOnImpact = removeOnImpact
-		self.setRotation(direction-90)
+		self.setRotation(direction - 90)
 		
 		global renderList
 		global bulletsList
 		renderList.append(self)
 		bulletsList.append(self)
 	
-	
 	def tick(self):
 		self.floatCenter[0] += self.movingIndex[0]
 		self.floatCenter[1] += self.movingIndex[1]
-		self.setRotation(self.getRotation()+self.rotationSpeed)
+		self.setRotation(self.getRotation() + self.rotationSpeed)
 		self.rect.center = self.floatCenter
 		self.lifetime += 1
 		if (self.lifetime > 150):
 			self.destroy()
 	
-	
 	def hit(self):
 		if (self.removeOnImpact == True):
 			self.destroy()
-	
 	
 	def destroy(self):
 		global renderList
@@ -232,7 +203,7 @@ class Bullet(Sprite):
 class Asteroid(Sprite):
 	def __init__(self, direction, speed, pos, rotationSpeed, size):
 		# sprite
-		self.original = pygame.image.load(resource_path("sprites\\asteroid"+str(size)+".png")).convert_alpha()
+		self.original = pygame.image.load("sprites\\asteroid" + str(size) + ".png").convert_alpha()
 		self.sprite = self.original
 		
 		# rect
@@ -241,29 +212,26 @@ class Asteroid(Sprite):
 		# variables
 		self.speed = speed
 		self.rotationSpeed = rotationSpeed
-		self.rad = math.radians((-direction)-90)
-		self.movingIndex = (self.speed*math.cos(self.rad), self.speed*math.sin(self.rad))
+		self.rad = math.radians((-direction) - 90)
+		self.movingIndex = (self.speed * math.cos(self.rad), self.speed * math.sin(self.rad))
 		self.floatCenter = list(pos)
 		self.lifetime = 0
 		self.size = size
-		self.setRotation(direction-90)
+		self.setRotation(direction - 90)
 		
 		global renderList
 		global asteroidsList
 		renderList.append(self)
 		asteroidsList.append(self)
 	
-	
 	def tick(self):
 		self.floatCenter[0] += self.movingIndex[0]
 		self.floatCenter[1] += self.movingIndex[1]
-		self.setRotation(self.getRotation()+self.rotationSpeed)
+		self.setRotation(self.getRotation() + self.rotationSpeed)
 		self.rect.center = self.floatCenter
 		self.lifetime += 1
 		if (self.lifetime > 500):
 			self.destroy(False)
-			
-	
 	
 	def destroy(self, division):
 		global renderList
@@ -271,8 +239,8 @@ class Asteroid(Sprite):
 		
 		if (division == True):
 			if (self.size > 1):
-				Asteroid(self.rotation-90, self.speed, self.floatCenter, random.randint(-4, 4), self.size-1)
-				Asteroid(self.rotation+90, self.speed, self.floatCenter, random.randint(-4, 4), self.size-1)
+				Asteroid(self.rotation - 90, self.speed, self.floatCenter, random.randint(-4, 4), self.size - 1)
+				Asteroid(self.rotation + 90, self.speed, self.floatCenter, random.randint(-4, 4), self.size - 1)
 			createExplosion(12, self.floatCenter, 40)
 		
 		renderList.remove(self)
@@ -282,7 +250,7 @@ class Asteroid(Sprite):
 class Particle(Sprite):
 	def __init__(self, direction, speed, pos, rotationSpeed, lifetime):
 		# sprite
-		self.original = pygame.image.load(resource_path("sprites\\particle.png")).convert_alpha()
+		self.original = pygame.image.load("sprites\\particle.png").convert_alpha()
 		self.sprite = self.original
 		
 		# rect
@@ -291,26 +259,24 @@ class Particle(Sprite):
 		# variables
 		self.speed = speed
 		self.rotationSpeed = rotationSpeed
-		self.rad = math.radians((-direction)-90)
-		self.movingIndex = (self.speed*math.cos(self.rad), self.speed*math.sin(self.rad))
+		self.rad = math.radians((-direction) - 90)
+		self.movingIndex = (self.speed * math.cos(self.rad), self.speed * math.sin(self.rad))
 		self.floatCenter = list(pos)
 		self.life = 0
 		self.lifetime = lifetime
-		self.setRotation(direction-90)
+		self.setRotation(direction - 90)
 		
 		global renderList
 		renderList.append(self)
 	
-	
 	def tick(self):
 		self.floatCenter[0] += self.movingIndex[0]
 		self.floatCenter[1] += self.movingIndex[1]
-		self.setRotation(self.getRotation()+self.rotationSpeed)
+		self.setRotation(self.getRotation() + self.rotationSpeed)
 		self.rect.center = self.floatCenter
 		self.life += 1
 		if (self.life > self.lifetime):
 			self.destroy(False)
-			
 	
 	def destroy(self, division):
 		global renderList
@@ -319,11 +285,10 @@ class Particle(Sprite):
 
 class Weapon():
 	def __init__(self, weaponType):
-		with open(resource_path("weapons.json"), "r") as stats:
+		with open("weapons.json", "r") as stats:
 			self.stats = json.load(stats)[weaponType]
 		self.timeout = self.stats["fireRate"]
 		changeWeapon(weaponType)
-	
 	
 	def tick(self, firing, direction):
 		if (firing == False):
@@ -333,7 +298,7 @@ class Weapon():
 			if (self.timeout == 0):
 				if (self.stats["multiShoot"] is not None):
 					for i in range(self.stats["multiShoot"]["bulletsPerShoot"]):
-						Bullet(direction+(self.stats["multiShoot"]["bulletsAngle"][i]), self.stats["speed"], self.stats["bulletSprite"], self.stats["removeOnImpact"])
+						Bullet(direction + (self.stats["multiShoot"]["bulletsAngle"][i]), self.stats["speed"], self.stats["bulletSprite"], self.stats["removeOnImpact"])
 				else:
 					Bullet(direction, self.stats["speed"], self.stats["bulletSprite"], self.stats["removeOnImpact"])
 				self.timeout = self.stats["fireRate"]
@@ -344,52 +309,50 @@ class Weapon():
 class GUIWeapon():
 	def __init__(self, name, pos):
 		self.name = name
-		self.unselectedSprite = pygame.image.load(resource_path("sprites\\GUI sprites\\"+self.name+".png")).convert_alpha()
-		self.selectedSprite = pygame.image.load(resource_path("sprites\\GUI sprites\\"+self.name+"Selected.png")).convert_alpha()
+		self.unselectedSprite = pygame.image.load("sprites\\GUI sprites\\" + self.name + ".png").convert_alpha()
+		self.selectedSprite = pygame.image.load("sprites\\GUI sprites\\" + self.name + "Selected.png").convert_alpha()
 		self.selected = False
-		self.rect = self.selectedSprite.get_rect(left = pos, top = 5)
+		self.rect = self.selectedSprite.get_rect(left=pos, top=5)
 		
 		global GUIWeaponsList
 		GUIWeaponsList.append(self)
 	
-	
 	def select(self):
 		self.selected = True
-	
 	
 	def unselect(self):
 		self.selected = False
 	
-	
 	def getID(self):
 		return self.name
-	
 	
 	def render(self, display):
 		if (self.selected):
 			display.blit(self.selectedSprite, self.rect)
 		else:
 			display.blit(self.unselectedSprite, self.rect)
-#--- /classes ---#
-#--- foctions ---#
+
+
+# --- /classes ---#
+# --- foctions ---#
 def createAsteroid():
 	commingFrom = random.randint(0, 3)
 	direction = 0
 	pos = [0, 0]
 	if (commingFrom == 0):
-		direction = random.randint(-180,-40)
+		direction = random.randint(-180, -40)
 		pos[0] = random.randint(0, screen.get_rect().width)
 		pos[1] = -50
 	elif (commingFrom == 1):
 		direction = random.randint(20, 160)
-		pos[0] = screen.get_rect().width+50
+		pos[0] = screen.get_rect().width + 50
 		pos[1] = random.randint(0, screen.get_rect().height)
 	elif (commingFrom == 2):
 		direction = random.randint(-70, 70)
 		if (direction > 110):
 			direction += 180
 		pos[0] = random.randint(0, screen.get_rect().width)
-		pos[1] = screen.get_rect().height+50
+		pos[1] = screen.get_rect().height + 50
 	else:
 		direction = random.randint(-170, 20)
 		pos[0] = -50
@@ -413,7 +376,7 @@ def createExplosion(particleAmount, pos, lifetime):
 
 
 def getAngleFromPositions(point1, point2):
-	return math.degrees(math.atan2(point1[0]-point2[0], point1[1]-point2[1]))
+	return math.degrees(math.atan2(point1[0] - point2[0], point1[1] - point2[1]))
 
 
 def changeWeapon(weaponID):
@@ -422,8 +385,10 @@ def changeWeapon(weaponID):
 			GUIWeapon.select()
 		else:
 			GUIWeapon.unselect()
-#--- /foctions ---#
-#--- main ---#
+
+
+# --- /foctions ---#
+# --- main ---#
 FPS = 60
 
 ctypes.windll.user32.SetProcessDPIAware()
@@ -451,7 +416,7 @@ shipRespawnTimeout = 0
 last = 0
 current = 0
 
-with open(resource_path("weapons.json"), "r") as stats:
+with open("weapons.json", "r") as stats:
 	GUIWeaponID = json.load(stats)
 GUIWeaponPos = 5
 for k, _ in GUIWeaponID.items():
@@ -494,7 +459,6 @@ while (running):
 			ship = Ship()
 			ship.updateDirection()
 	
-	
 	# tick and render
 	screen.fill((pygame.Color("black")))
 	for sprite in renderList:
@@ -508,4 +472,4 @@ while (running):
 	# loop timer
 	clock.tick_busy_loop(FPS)
 pygame.quit()
-#--- /main ---#
+# --- /main ---#
